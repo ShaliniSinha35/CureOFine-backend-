@@ -788,13 +788,10 @@ app.get("/userInfo", (req, res) => {
             res.status(500).json({ message: "Database error" });
           } else {
             // Send OTP to the user using Msg91 API
-            sdk.sendSms({
-              template_id: 'your_msg91_template_id',
-              recipients: [{ mobiles: phoneNumber, VAR1: otp.toString() }]
-            })
-            .then(({ data }) => {
+             sendSms(phoneNumber,otp)
+            .then(() => {
               // console.log("Msg91 API response:", data);
-              res.json({ message: "User and OTP inserted successfully", number: phoneNumber });
+              res.json({ message: "OTP generated and sent successfully", number: phoneNumber });
             })
             .catch(err => {
               console.error("Error sending SMS:", err);
