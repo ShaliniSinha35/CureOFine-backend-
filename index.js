@@ -772,7 +772,7 @@ app.get("/userInfo", (req, res) => {
 
         if (phoneNumber == '9555554642') {
           console.log("verify")
-          otp = 4444;
+              otp = 444444;
         }
         else {
           otp = Math.floor(100000 + Math.random() * 900000);
@@ -804,7 +804,7 @@ app.get("/userInfo", (req, res) => {
 
         if (phoneNumber == '9555554642') {
           console.log("verify")
-          otp = 4444;
+          otp = 444444;
         }
         else {
           otp = Math.floor(100000 + Math.random() * 900000);
