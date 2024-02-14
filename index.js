@@ -63,23 +63,17 @@ database: "mclinpll_cureofine_new",
 
 
 function handleDisconnect() {
-  connection.connect((err) => {
+  connection.getConnection((err, connection) => {
     if (err) {
-      console.error('Error connecting to MySQL:', err);
+      console.error('Error getting MySQL connection:', err);
       setTimeout(handleDisconnect, 2000);
     } else {
-      console.log("Connected to MySQL");
+      console.log('Connected to MySQL');
+    
+      connection.release();
     }
   });
 
-  connection.on('error', (err) => {
-    console.error('MySQL connection error:', err);
-    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-      handleDisconnect();
-    } else {
-      throw err;
-    }
-  });
 }
 
 handleDisconnect();
@@ -774,6 +768,7 @@ app.get("/userInfo", (req, res) => {
         let otp;
 
         if (phoneNumber == '9555554642') {
+          console.log("verify")
           otp = 4444;
         }
         else {
@@ -805,6 +800,7 @@ app.get("/userInfo", (req, res) => {
         let otp;
 
         if (phoneNumber == '9555554642') {
+          console.log("verify")
           otp = 4444;
         }
         else {
