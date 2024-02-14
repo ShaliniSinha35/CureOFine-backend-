@@ -38,7 +38,13 @@ const sendSms = async (mobileNumber, otp) => {
     console.error('Error sending SMS:', error.message);
   }
 };
-const connection = mysql.createConnection({
+const connection = mysql.createPool({
+
+  connectionLimit: 10,
+  host: "119.18.54.135",
+user: "mclinpll_cureofine_new_u",
+password: "3{Mg~G39W8MK",
+database: "mclinpll_cureofine_new",
   // host: "119.18.54.135",
   // user: "mclinpll_cureofine",
   // password: "BRLN,GC4*WXT",
@@ -50,10 +56,7 @@ const connection = mysql.createConnection({
 // $password = "3{Mg~G39W8MK";
 // $dbname = "mclinpll_cureofine_new";
 
-host: "119.18.54.135",
-user: "mclinpll_cureofine_new_u",
-password: "3{Mg~G39W8MK",
-database: "mclinpll_cureofine_new",
+
 
   // host: "localhost",
   // user: "root",
