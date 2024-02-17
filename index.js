@@ -1,23 +1,28 @@
 const express = require("express");
 const mysql = require("mysql");
+const cors = require('cors');  // Move this line to the top
 const app = express();
-const port = process.env.port || 3000;
+app.use(cors());
+const port = process.env.PORT || 3000;
 const bodyParser = require("body-parser");
-// const storage = require("node-persist");
 const path = require("path")
-const cors = require('cors');
-const accountSid = "ACb5372861a5287c06e6b0b9119fad7621";
-const authToken = "b9deda9bf11b986094e20069e8f479bb";
 const sdk = require('api')('@msg91api/v5.0#6n91xmlhu4pcnz');
 const axios = require('axios');
 const multer = require('multer');
-app.use(cors())
+
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', true); 
+  next();
+});
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("public"));
 const sendSms = async (mobileNumber, otp) => {
   // console.log(mobileNumber,otp)
-  const apiKey = '413483A3W9I40kb5g7659e5c6fP1'; // Replace with your actual API key
+  const apiKey = '413483A3W9I40kb5g7659e5c6fP1'; 
   const apiUrl = 'https://api.msg91.com/api/v5/flow/';
   
   try {
@@ -45,16 +50,7 @@ const connection = mysql.createPool({
 user: "mclinpll_cureofine_new_u",
 password: "3{Mg~G39W8MK",
 database: "mclinpll_cureofine_new",
-  // host: "119.18.54.135",
-  // user: "mclinpll_cureofine",
-  // password: "BRLN,GC4*WXT",
-  // database: "mclinpll_cureofine_db",
-
-
-//   $servername = "localhost";
-// $username = "mclinpll_cureofine_new_u";
-// $password = "3{Mg~G39W8MK";
-// $dbname = "mclinpll_cureofine_new";
+ 
 
 
 
@@ -81,13 +77,7 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-// connection.connect((err) => {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     console.log("connected");
-//   }
-// });
+
 
 
 const storage = multer.diskStorage({
@@ -244,70 +234,6 @@ app.post("/enquiry", (req, res) => {
     console.log("record inserted");
   });
 });
-
-app.post("/signup", async (req, res) => {
-  const phoneNumber = req.body.phone;
-  // console.log(phoneNumber)
-
-  const otp = Math.floor(100000 + Math.random() * 900000);
-
-  const twilio = require("twilio")(accountSid, authToken);
-  await twilio.messages.create({
-    to: `+91 ${phoneNumber}`,
-    from: +16178418324,
-    body: `Your OTP is:${otp}`,
-  })
-    .then(() => res.json({ message: "Valid Number" }))
-    .catch(() => res.json({ message: `Invalid Number${phoneNumber}` }))
-
-  const user = { phoneNumber, otp };
-  // console.log(user);
-
-  await storage.init();
-  await storage.setItem("user", user);
-
-
-  console.log("otp sent successfully")
-
-});
-
-
-
-
-app.post("/verify", async (req, res) => {
-  const otp = req.body.otp;
-  console.log("otp", otp);
-  const user = await storage.getItem("user");
-  console.log(user);
-
-  if (!user) {
-    console.log("not found");
-    return res.status(400).json({ message: "User not found" });
-  }
-
-  if (otp == user.otp) {
-    console.log("otp verification successful");
-
-    var sql = "INSERT INTO web_user( mobile, otp_details, cdate ) VALUES (?, ?, NOW())";
-    connection.query(sql, [user.phoneNumber, user.otp], (err, result) => {
-      if (err) {
-        console.error("Error inserting data into the database:", err);
-        res.status(500).json({ message: "Database error" });
-      } else {
-        console.log("User registered successfully");
-          res.json({ message: "OTP verification successful",number: user.phoneNumber });
-        storage.clear();
-      }
-    });
-  } else {
-    console.log("Invalid OTP");
-    res.status(400).json({ message: "Invalid OTP" });
-  }
-
-
-});
-
-
 
 
 
@@ -574,18 +500,6 @@ app.get("/city", (req, res) => {
 });
 
 
-// app.get("/brand", (req, res) => {
-//   connection.query(
-//     "SELECT `id`, `name`, `logo`,  `status` FROM `brand` ",
-//     (error, results) => {
-//       if (error) {
-//         console.log(error);
-//       } else {
-//         res.json(results);
-//       }
-//     }
-//   );
-// });
 
 
 app.get("/products", (req, res) => {
@@ -688,18 +602,7 @@ app.get("/facilityType", (req, res) => {
 });
 
 
-// app.get("/surgeryList", (req, res) => {
-//   connection.query(
-//     "SELECT `id`, `name`, `price`, `offer_price`, `image`, `details`, `hid` FROM `surgery`",
-//     (error, results) => {
-//       if (error) {
-//         console.log(error);
-//       } else {
-//         res.json(results);
-//       }
-//     }
-//   );
-// });
+
 
 
 app.post("/updateProfile", async (req, res) => {
@@ -1035,6 +938,17 @@ app.post("/updatePaymentTransactionFailure", async (req, res) => {
     }
   );
 });
-app.listen(port, () => {
+const options = {
+key: fs.readFileSync('./server.key'),
+  cert: fs.readFileSync('./server.crt')
+};
+app.get('/', (req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello, world!');
+});
+
+const server = https.createServer(options, app);
+server.listen(port, () => {
   console.log("server is running");
 });
+
