@@ -951,7 +951,7 @@ app.get('/', (req, res) => {
 
 const server = https.createServer(options, app);
 
-server.listen(port, () => {
+app.listen(port, () => {
   console.log("server is running");
 });
 
