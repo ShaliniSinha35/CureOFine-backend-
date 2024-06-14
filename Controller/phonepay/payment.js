@@ -1,11 +1,13 @@
-const crypto =  require('crypto');
+const crypto = require('crypto');
 const axios = require('axios');
 
 // const {salt_key, merchant_id} = require("./secret")
-const salt_key = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
-const merchant_id ="PGTESTPAYUAT";
+const salt_key = "96434309-7796-489d-8924-ab56988a6076";
+const merchant_id = "PGTESTPAYUAT86";
 
+// Function to initiate a new payment
 const newPayment = async (req, res) => {
+    console.log(req.body)
     try {
         const merchantTransactionId = req.body.transactionId;
         const data = {
@@ -13,14 +15,15 @@ const newPayment = async (req, res) => {
             merchantTransactionId: merchantTransactionId,
             merchantUserId: req.body.MUID,
             name: req.body.name,
-            amount: req.body.amount * 100,
-            redirectUrl: `https://cureofine-azff.onrender.com/api/status/${merchantTransactionId}`,
+            amount: req.body.amount * 100, 
+            redirectUrl: `https://cureofine.com/api/api/api/status/${merchantTransactionId}`,
             redirectMode: 'POST',
             mobileNumber: req.body.mobile,
             paymentInstrument: {
                 type: 'PAY_PAGE'
             }
         };
+
         const payload = JSON.stringify(data);
         const payloadMain = Buffer.from(payload).toString('base64');
         const keyIndex = 1;
@@ -28,7 +31,7 @@ const newPayment = async (req, res) => {
         const sha256 = crypto.createHash('sha256').update(string).digest('hex');
         const checksum = sha256 + '###' + keyIndex;
 
-        const prod_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay"
+        const prod_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
         const options = {
             method: 'POST',
             url: prod_URL,
@@ -42,30 +45,36 @@ const newPayment = async (req, res) => {
             }
         };
 
-        axios.request(options).then(function (response) {
-            // console.log(response.data)
-            res.json({ message: "Payment Initiated", result: response.data.data.instrumentResponse.redirectInfo.url,merchantId:response.data.data.merchantId,transactionId:response.data.data.merchantTransactionId});
-            // return res.send(response.data.data.instrumentResponse.redirectInfo.url)
-        })
-        .catch(function (error) {
-            console.error(error);
-        });
-
+        const response = await axios.request(options);
+        console.log("Payment Initiated Response:", response.data);
+        
+        if (response.data.success) {
+            res.json({
+                message: "Payment Initiated",
+                result: response.data.data.instrumentResponse.redirectInfo.url,
+                merchantId: response.data.data.merchantId,
+                transactionId: response.data.data.merchantTransactionId
+            });
+        } else {
+            res.status(400).json({
+                message: "Payment initiation failed",
+                error: response.data.message
+            });
+        }
     } catch (error) {
+        console.error("Error initiating payment:", error);
         res.status(500).send({
             message: error.message,
             success: false
-        })
+        });
     }
-}
+};
+
+// Function to check the status of a payment
 
 const checkStatus = async (req, res) => {
-    // const merchantTransactionId = req.body.transactionId;
-    // console.log("64",req.params)
-    const merchantTransactionId=  req.params.txnId;
-    // console.log(merchantTransactionId)
-
-
+    const merchantTransactionId = req.params.txnId;
+    console.log("Checking status for transaction:", merchantTransactionId);
 
     const keyIndex = 1;
     const string = `/pg/v1/status/${merchant_id}/${merchantTransactionId}` + salt_key;
@@ -79,24 +88,26 @@ const checkStatus = async (req, res) => {
             accept: 'application/json',
             'Content-Type': 'application/json',
             'X-VERIFY': checksum,
-            'X-MERCHANT-ID': `${merchant_id}`
+            'X-MERCHANT-ID': merchant_id
         }
     };
 
-    // CHECK PAYMENT STATUS
-    axios.request(options).then(async (response) => {
-        // console.log("PhonePe Status Response:", response.data);
+    try {
+        const response = await axios.request(options);
+        console.log("PhonePe Status Response:", response.data);
+        console.log(response.data.success)
 
-        if (response.data.success === true) {
-            res.json({ status: 'success', message: 'Payment successful' });
+        if (response.data.success) {
+            res.json({ status: 'success', message: 'Payment successful', paymentStatus: 'success' });
         } else {
-            res.json({ status: 'failure', message: 'Payment failed' });
+            res.json({ status: 'failure', message: 'Payment failed', paymentStatus: 'failure' });
         }
-    }).catch((error) => {
-        console.error("PhonePe Status API Error:", error);
-        res.status(500).json({ status: 'error', message: 'Internal server error' });
-    });
+    } catch (error) {
+        console.error("PhonePe Status API Error:", error.message);
+        res.status(500).json({ status: 'error', message: 'Internal server error', paymentStatus: 'error' });
+    }
 };
+
 
 module.exports = {
     newPayment,
